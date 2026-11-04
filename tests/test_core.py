@@ -52,3 +52,8 @@ def test_normalise_cleans_gemini_output():
     assert out["type"] == "Note" and out["summary"] == "Note"
     assert out["date"] == "2026-11-04"                                          # no future dates
     assert out["promises"] == [{"who": "me", "person": "", "what": "send deck", "due": ""}]
+
+
+def test_notion_dropdown_options_have_no_commas():
+    names = list(CFG["worlds"]) + list(CFG["tiers"]) + [CFG["new_person_tier"]]
+    assert not [n for n in names if "," in n]

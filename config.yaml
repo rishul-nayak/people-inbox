@@ -32,7 +32,7 @@ first_follow_up_days: 1       # a new person's first "next contact" = the 24-hou
 daily_pings: 3                # the 09:00 message suggests this many people to ping (Allies first)
 
 worlds: ["Startups & tech", "VC & founders", "Policy & politics", "Famous & powerful",
-         "Creators & media", "School, work & roots", "Friends", "Family", "Other"]
+         "Creators & media", "School and work roots", "Friends", "Family", "Other"]
 
 # ---- Promises with no date get these defaults ----
 promise_due_days:
