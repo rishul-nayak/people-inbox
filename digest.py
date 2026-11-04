@@ -6,6 +6,7 @@ so GitHub never pauses the 10-minute schedule (it pauses public-repo schedules a
 from __future__ import annotations
 
 import html
+import re
 import sys
 
 from common import add_days, env, load_config, load_dotenv, load_state, log, nice_date, save_state, today_local
@@ -14,8 +15,10 @@ from notion_client import prop
 esc = html.escape
 
 
-def build(store, today: str) -> str | None:
-    names = {p["id"]: p["name"] for p in store.people()}
+def build(store, today: str, cfg: dict | None = None) -> str | None:
+    cfg = cfg or store.cfg
+    people = store.people()
+    names = {p["id"]: p["name"] for p in people}
     due = sorted((r for r in store.open_promises() if r["who"] == "Me" and r["due"] and r["due"][:10] <= today),
                  key=lambda r: r["due"])
     met = []
@@ -23,7 +26,10 @@ def build(store, today: str) -> str | None:
         for pid in prop(row, "People") or []:
             if pid in names and names[pid] not in met:
                 met.append(names[pid])
-    if not due and not met:
+    order = {t: i for i, t in enumerate(["Ally", "Tier 1", "Tier 2", "Tier 3"])}
+    pings = sorted((p for p in people if p["next"] and p["next"][:10] <= today and p["tier"] in order and p["name"] not in met),
+                   key=lambda p: (order[p["tier"]], p["next"]))[:cfg["daily_pings"]]
+    if not due and not met and not pings:
         return None
     lines = ["☀️ <b>Today</b>"]
     if due:
@@ -35,6 +41,11 @@ def build(store, today: str) -> str | None:
     if met:
         lines.append("\n<b>Met yesterday: send each a follow-up today</b>")
         lines.append("• " + ", ".join(esc(n) for n in met[:15]))
+    if pings:
+        lines.append("\n<b>Ping today</b> (a useful link, a congrats, or \"how did X go?\")")
+        for p in pings:
+            why = re.sub(r"^\[[^\]]*\]\s*", "", (p["cares_about"].splitlines() or [""])[-1])[:90]
+            lines.append(f"• {esc(p['name'])} · {esc(p['tier'])} · last {nice_date(p['last']) or '—'}" + (f": {esc(why)}" if why else ""))
     return "\n".join(lines)
 
 

@@ -1,6 +1,7 @@
 # People Inbox — all the knobs live here. Edit, commit, push. The next run uses them.
 
 owner_name: "Rishul"            # the AI never saves you as a contact
+owner_links: ["Jabalpur", "Madhya Pradesh", "IIT Bombay", "economics", "AI agents"]   # rare links the AI looks for (edit anytime)
 timezone: "Asia/Kolkata"
 
 # ---- Notion IDs (not secrets). "Setup Notion" fills these in and commits them. ----
@@ -27,6 +28,8 @@ tiers:
   Tier 3: 365
   Dormant: 0
 new_person_tier: "Tier 1"     # new contacts stay in Tier 1 until you move them
+first_follow_up_days: 1       # a new person's first "next contact" = the 24-hour follow-up
+daily_pings: 3                # the 09:00 message suggests this many people to ping (Allies first)
 
 worlds: ["Startups & tech", "VC & founders", "Policy & politics", "Famous & powerful",
          "Creators & media", "School, work & roots", "Friends", "Family", "Other"]

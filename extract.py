@@ -25,6 +25,7 @@ PERSON = {
         "cares_about": {"type": "string"},
         "personal_notes": {"type": "string"},
         "ideas_to_help": {"type": "string"},
+        "common_ground": {"type": "string"},
         "linkedin_url": {"type": "string"},
         "email": {"type": "string"},
         "phone": {"type": "string"},
@@ -45,12 +46,16 @@ SCHEMA = {
             "required": ["who", "what"]}},
         "question": {"type": "string"},
         "transcript": {"type": "string"},
+        "follow_up_draft": {"type": "string"},
     },
     "required": ["people", "summary", "type", "promises"],
 }
 
 PROMPT = """You keep {owner}'s personal network notes. {owner} sends you a voice note, a photo (visiting card,
 profile screenshot) or text about people he met or talked to. Today is {today} ({weekday}).{event}
+
+How {owner} networks: be useful first, keep every promise, follow up within 24 hours, and remember
+what matters most to people (their goals, problems, health, wealth, children).
 
 Return JSON:
 - people: everyone he met or talked about as a contact. Never include {owner} himself.
@@ -59,7 +64,9 @@ Return JSON:
   how_met: where or through whom they met, in a few words.
   cares_about: their goals, problems, what they are working on.
   personal_notes: family, hobbies, hometown, life events. Write respectfully, as if they might read it.
-  ideas_to_help: ways {owner} could help them, only if he said so or it follows directly.
+  common_ground: rare things they share with {owner} (his links: {links}). Only if said.
+  ideas_to_help: up to 2 small, useful things {owner} could do for them (an intro, an article, feedback,
+    a five-minute favour) that follow from what was said. Never invent facts.
 - summary: one plain line about this interaction, e.g. "Coffee at Third Wave, talked about AI pricing".
 - type: Meeting, Call, Event, Message, Note, or Contact card (just a card or profile, no conversation).
 - date: YYYY-MM-DD of the interaction. "yesterday" means the day before today. Empty if not said.
@@ -67,6 +74,10 @@ Return JSON:
   person = that contact's name. due = YYYY-MM-DD if a time was said ("by Friday"), else empty.
 - question: if a key fact is missing (a full name, or how they met), ONE short question to ask {owner}. Else empty.
 - transcript: for a voice note, what he said, word for word. Empty for text and photos.
+- follow_up_draft: if he met or talked to someone new or important, his 24-hour follow-up message to the main
+  person: thank them, name one specific moment, deliver or restate what he promised, one clear next step.
+  3 to 4 short sentences, warm, plain English, no buzzwords, ending "— {owner}". Empty for a contact card,
+  a forwarded message or a plain note.
 He may speak English or Hinglish. Write the output in English."""
 
 
@@ -81,7 +92,7 @@ class ExtractError(Exception):
 def build_prompt(cfg: dict, today: str, event: str | None) -> str:
     d = date.fromisoformat(today)
     return PROMPT.format(owner=cfg["owner_name"], today=today, weekday=d.strftime("%A"),
-                         worlds=", ".join(cfg["worlds"]),
+                         worlds=", ".join(cfg["worlds"]), links=", ".join(cfg.get("owner_links") or []),
                          event=f"\nHe is at this event right now: {event}." if event else "")
 
 
@@ -130,6 +141,7 @@ def normalise(data: dict, cfg: dict, today: str) -> dict:
         "promises": promises,
         "question": _s(data.get("question"), 200),
         "transcript": _s(data.get("transcript"), 5000),
+        "follow_up_draft": str(data.get("follow_up_draft") or "").strip()[:1000],
     }
 
 

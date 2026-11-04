@@ -13,8 +13,9 @@ from notion_client import P, prop
 
 # person dict key -> People property
 TEXT = {"company": "Company", "role": "Role", "how_met": "How we met",
-        "cares_about": "Cares about", "personal_notes": "Personal notes", "ideas_to_help": "Ideas to help"}
-APPEND = {"cares_about", "personal_notes", "ideas_to_help"}       # existing person: add a dated line
+        "cares_about": "Cares about", "personal_notes": "Personal notes", "ideas_to_help": "Ideas to help",
+        "common_ground": "Common ground"}
+APPEND = {"cares_about", "personal_notes", "ideas_to_help", "common_ground"}   # existing person: add a dated line
 FILL = {"company", "role", "how_met"}                              # existing person: only if empty
 OTHER = {"world": ("World", P.select), "linkedin_url": ("LinkedIn", P.url),
          "email": ("Email", P.email), "phone": ("Phone", P.phone)}
@@ -86,7 +87,7 @@ class Store:
 
     def save_capture(self, ex: dict, source: str, event: str | None, today: str, existing_id: str | None = None) -> dict:
         rows = self.people()
-        tiers, default_tier = self.cfg["tiers"], self.cfg["new_person_tier"]
+        default_tier = self.cfg["new_person_tier"]
         data = {"created": [], "snap": {}, "promises": [], "maybe": [], "card": {}}
         card_people, ids = [], []
 
@@ -99,17 +100,17 @@ class Store:
                     data["snap"][row["id"]] = snap
                     self.n.update_page(row["id"], props)
                 card_people.append({"name": row["name"], "url": row["url"], "status": "updated",
-                                    "next": _next(props, row["next"])})
+                                    "next": _next(props, row["next"]), "idea": p.get("ideas_to_help", "")})
                 ids.append(row["id"])
                 continue
-            days = tiers.get(default_tier, 30)
-            nxt = add_days(ex["date"], days) if days else None
+            nxt = add_days(ex["date"], self.cfg["first_follow_up_days"])   # the 24-hour follow-up comes first
             page = self.n.create_page(self.people_ds, self._new_props(p, default_tier, ex["date"], nxt))
             row = person_row(page)
             rows.append(row)
             data["created"].append(page["id"])
             ids.append(page["id"])
-            card_people.append({"name": p["name"], "url": page.get("url", ""), "status": "new", "tier": default_tier, "next": nxt})
+            card_people.append({"name": p["name"], "url": page.get("url", ""), "status": "new", "tier": default_tier,
+                                "next": nxt, "idea": p.get("ideas_to_help", "")})
             if kind == "maybe":
                 data["maybe"].append({"k": len(card_people) - 1, "new": page["id"],
                                       "cands": [h["id"] for h in hits], "names": [h["name"] for h in hits]})
@@ -136,7 +137,7 @@ class Store:
             card_promises.append({"who": pr["who"], "person": who_name, "what": pr["what"], "due": due})
 
         data["card"] = {"type": ex["type"], "date": ex["date"], "event": event or "", "people": card_people,
-                        "promises": card_promises, "question": ex["question"]}
+                        "promises": card_promises, "question": ex["question"], "draft": ex.get("follow_up_draft") or ""}
         self._set_data(iid, data)
         return {"id": iid, **data["card"], "maybe": data["maybe"]}
 
@@ -225,7 +226,7 @@ class Store:
         d["maybe"] = [x for x in d["maybe"] if x["k"] != k]
         old_name = d["card"]["people"][k]["name"]
         d["card"]["people"][k] = {"name": cand["name"], "url": cand["url"], "status": "updated",
-                                  "next": _next(props, cand["next"])}
+                                  "next": _next(props, cand["next"]), "idea": d["card"]["people"][k].get("idea", "")}
         for pr in d["card"]["promises"]:
             if pr["person"] == old_name:
                 pr["person"] = cand["name"]

@@ -43,6 +43,9 @@ def card_text(c: dict) -> str:
         else:
             status = "updated" + (f" · next {nice_date(p['next'])}" if p.get("next") else "")
         lines.append(f"👤 {name} — {status}")
+    for p in c["people"][:3]:
+        if p.get("idea"):
+            lines.append(f"🎁 For {esc(p['name'])}: {esc(p['idea'])}")
     for pr in c["promises"]:
         if pr["who"] == "me":
             lines.append(f"📌 You → {esc(pr['person'] or 'them')}: {esc(pr['what'])} · due {nice_date(pr['due'])}")
@@ -50,6 +53,8 @@ def card_text(c: dict) -> str:
             lines.append(f"📌 {esc(pr['person'] or 'They')} → you: {esc(pr['what'])} · check {nice_date(pr['due'])}")
     if c.get("question"):
         lines.append(f"❓ {esc(c['question'])} <i>(reply to this message)</i>")
+    if c.get("draft"):
+        lines.append(f"\n✉️ <b>Your 24-hour follow-up</b> (tap to copy, edit, send yourself)\n<pre>{esc(c['draft'])}</pre>")
     return "\n".join(lines)
 
 
@@ -240,7 +245,8 @@ class Bot:
             job = " · ".join(x for x in (p["role"], p["company"]) if x)
             lines = [f'<b><a href="{esc(p["url"])}">{esc(p["name"])}</a></b> — {esc(p["tier"] or "no tier")}' + (f" · {esc(job)}" if job else "")]
             lines.append(f"Last {nice_date(p['last']) or '—'} · next {nice_date(p['next']) or '—'}")
-            for label, k in (("Cares about", "cares_about"), ("Personal", "personal_notes"), ("How you met", "how_met")):
+            for label, k in (("Cares about", "cares_about"), ("Personal", "personal_notes"), ("How you met", "how_met"),
+                             ("Common ground", "common_ground"), ("Ideas to help", "ideas_to_help")):
                 if p[k]:
                     lines.append(f"<b>{label}:</b> {esc(p[k][-400:])}")
             for pr in promises:

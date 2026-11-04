@@ -13,9 +13,11 @@ from tests.fakes import OWNER, FakeExtractor, FakeNotion, FakeTelegram, button, 
 
 TODAY = "2026-11-04"
 NEHA = {"people": [{"name": "Neha Sharma", "company": "Razorpay", "role": "PM", "how_met": "AI meetup",
-                    "cares_about": "Hiring PMs for AI payments"}],
+                    "cares_about": "Hiring PMs for AI payments", "common_ground": "Both from Jabalpur",
+                    "ideas_to_help": "Intro to a strong AI engineer"}],
         "summary": "Met at AI meetup", "type": "Event", "date": TODAY,
-        "promises": [{"who": "me", "person": "Neha", "what": "Send my pricing teardown", "due": ""}], "question": ""}
+        "promises": [{"who": "me", "person": "Neha", "what": "Send my pricing teardown", "due": ""}], "question": "",
+        "follow_up_draft": "Hi Neha, great meeting you at the AI meetup. Sending my pricing teardown tomorrow. — Rishul"}
 
 
 @pytest.fixture(autouse=True)
@@ -39,13 +41,16 @@ def test_text_note_creates_person_interaction_promise():
     assert b.run()["saved"] == 1
     [p] = people(n)
     assert prop(p, "Name") == "Neha Sharma" and prop(p, "Tier") == "Tier 1"
-    assert prop(p, "Last contact") == TODAY and prop(p, "Next contact") == "2026-12-04"   # Tier 1 = 30 days
+    assert prop(p, "Last contact") == TODAY and prop(p, "Next contact") == "2026-11-05"   # 24-hour follow-up first
+    assert prop(p, "Common ground") == "Both from Jabalpur"
     [i] = n.rows("interactions_ds_id")
     assert prop(i, "Status") == "Saved" and prop(i, "People") == [p["id"]]
     [pr] = n.rows("promises_ds_id")
     assert prop(pr, "Who") == "Me" and prop(pr, "Person") == [p["id"]] and prop(pr, "Due") == "2026-11-06"
     card = tg.sent[-1]
-    assert "Neha Sharma" in card["text"] and "new · Tier 1" in card["text"] and "due 6 Nov" in card["text"]
+    assert "Neha Sharma" in card["text"] and "new · Tier 1 · next 5 Nov" in card["text"] and "due 6 Nov" in card["text"]
+    assert "🎁 For Neha Sharma: Intro to a strong AI engineer" in card["text"]
+    assert "<pre>Hi Neha, great meeting you" in card["text"]
     assert card["buttons"][-1][0][0] == "↩️ Undo"
     assert tg.acked == [1]
 
@@ -58,14 +63,15 @@ def test_second_note_updates_same_person_and_undo_restores():
     tg.queue = [msg(2, "note 2")]
     b.run()
     [p] = people(n)                                                  # no duplicate
-    assert prop(p, "Last contact") == TODAY and prop(p, "Next contact") == "2026-12-04"
+    assert prop(p, "Last contact") == TODAY and prop(p, "Next contact") == "2026-12-04"    # then Tier 1 = 30 days
     assert prop(p, "Personal notes") == "[2026-11-04] Runs marathons"
     assert "updated" in tg.sent[-1]["text"]
     undo = tg.sent[-1]["buttons"][-1][0][1]
     tg.queue = [button(3, undo)]
     b.run()
     p = n.get_page(p["id"])
-    assert prop(p, "Last contact") == "2026-10-20" and prop(p, "Personal notes") == ""   # back to before
+    assert prop(p, "Last contact") == "2026-10-20" and prop(p, "Next contact") == "2026-10-21"
+    assert prop(p, "Personal notes") == ""   # back to before
     assert "Undone" in tg.edits[-1]["text"]
 
 
@@ -166,7 +172,23 @@ def test_digest_lists_due_promises_and_yesterdays_people():
     b.run()
     text = build(b.store, TODAY)
     assert "Send deck · 3 Nov (late)" in text and "Met yesterday" in text and "Neha Sharma" in text
+    assert "Ping today" not in text            # Neha is already in "met yesterday"
     assert build(Store(FakeNotion(), c), TODAY) is None
+
+
+def test_digest_pings_allies_first_with_a_reason():
+    c = cfg()
+    n = FakeNotion()
+    s = Store(n, c)
+    for name, tier, nxt in [("Tara", "Tier 2", "2026-11-01"), ("Arjun", "Ally", "2026-11-04"), ("Zoya", "Tier 1", "2026-11-02"),
+                            ("Late Later", "Tier 1", "2026-12-01"), ("Mom", "Inner circle", "2026-11-01")]:
+        n.create_page("people_ds_id", {"Name": {"title": [{"type": "text", "text": {"content": name}}]},
+                                       "Tier": {"select": {"name": tier}}, "Next contact": {"date": {"start": nxt}},
+                                       "Cares about": {"rich_text": [{"type": "text", "text": {"content": "[2026-10-01] Raising a seed round"}}]}})
+    text = build(s, TODAY)
+    lines = [l for l in text.splitlines() if l.startswith("• ")]
+    assert [l.split(" · ")[0][2:] for l in lines] == ["Arjun", "Zoya", "Tara"]     # Ally, Tier 1, Tier 2; max 3
+    assert lines[0].endswith(": Raising a seed round") and "Mom" not in text and "Late Later" not in text
 
 
 def test_card_buttons_fit_telegram_limit():
