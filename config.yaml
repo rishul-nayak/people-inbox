@@ -7,12 +7,12 @@ timezone: "Asia/Kolkata"
 # ---- Notion IDs (not secrets). "Setup Notion" fills these in and commits them. ----
 ids:
   NOTION_PARENT_PAGE_ID: "40d943f7e3a8814fa71ae06cf623aeb0"   # Life → Professional (same page as Content Inbox)
-  PEOPLE_DB_ID: ""
-  PEOPLE_DS_ID: ""
-  INTERACTIONS_DB_ID: ""
-  INTERACTIONS_DS_ID: ""
-  PROMISES_DB_ID: ""
-  PROMISES_DS_ID: ""
+  PEOPLE_DB_ID: "7b59bf6a-3068-40aa-80f2-65ea183568bc"
+  PEOPLE_DS_ID: "b804cf67-2563-4702-8509-2a5a16a8b733"
+  INTERACTIONS_DB_ID: "a8220268-de2d-4186-9657-10af29ba6691"
+  INTERACTIONS_DS_ID: "2f219745-5ffa-4669-b8be-5b8d959fc810"
+  PROMISES_DB_ID: "a30078f3-3d01-491d-9a81-d622357ff737"
+  PROMISES_DS_ID: "4e807ebb-dcab-46c0-905a-c8f1cbb6938b"
 
 # ---- Gemini (free tier; same key as Content Inbox is fine) ----
 gemini:
