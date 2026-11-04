@@ -1,0 +1,40 @@
+# People Inbox — all the knobs live here. Edit, commit, push. The next run uses them.
+
+owner_name: "Rishul"            # the AI never saves you as a contact
+timezone: "Asia/Kolkata"
+
+# ---- Notion IDs (not secrets). "Setup Notion" fills these in and commits them. ----
+ids:
+  NOTION_PARENT_PAGE_ID: "40d943f7e3a8814fa71ae06cf623aeb0"   # Life → Professional (same page as Content Inbox)
+  PEOPLE_DB_ID: ""
+  PEOPLE_DS_ID: ""
+  INTERACTIONS_DB_ID: ""
+  INTERACTIONS_DS_ID: ""
+  PROMISES_DB_ID: ""
+  PROMISES_DS_ID: ""
+
+# ---- Gemini (free tier; same key as Content Inbox is fine) ----
+gemini:
+  model: "gemini-3.5-flash-lite"      # reads voice notes, photos and text; ~500 free requests/day
+  fallback_model: "gemini-3.6-flash"  # used if the main model errors
+
+# ---- Tiers: days until the next contact after each touch (from the networking skill) ----
+tiers:
+  Inner circle: 0       # 0 = no reminder; these relationships are never "managed"
+  Ally: 21
+  Tier 1: 30
+  Tier 2: 90
+  Tier 3: 365
+  Dormant: 0
+new_person_tier: "Tier 1"     # new contacts stay in Tier 1 until you move them
+
+worlds: ["Startups & tech", "VC & founders", "Policy & politics", "Famous & powerful",
+         "Creators & media", "School, work & roots", "Friends", "Family", "Other"]
+
+# ---- Promises with no date get these defaults ----
+promise_due_days:
+  me: 2       # what you promised: due in 2 days
+  them: 7     # what they promised you: check in 7 days
+
+event_hours: 4          # /event tags every capture for this many hours
+pending_max_tries: 3    # a capture that failed (Gemini busy) is retried this many runs

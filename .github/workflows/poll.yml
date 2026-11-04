@@ -1,0 +1,40 @@
+name: People Inbox bot
+
+on:
+  schedule:
+    - cron: "*/10 1-18 * * *"   # every 10 min, 06:30 to 00:20 IST (GitHub can start runs a few minutes late)
+  workflow_dispatch:            # "Run workflow" = check Telegram right now
+
+permissions:
+  contents: write
+
+concurrency:
+  group: people-inbox
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_OWNER_ID: ${{ secrets.TELEGRAM_OWNER_ID }}
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python bot.py
+      - name: Commit state (only when /event changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "state: event mode changed"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 5; done
+          exit 1
