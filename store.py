@@ -14,8 +14,8 @@ from notion_client import P, prop
 # person dict key -> People property
 TEXT = {"company": "Company", "role": "Role", "how_met": "How we met",
         "cares_about": "Cares about", "personal_notes": "Personal notes", "ideas_to_help": "Ideas to help",
-        "common_ground": "Common ground"}
-APPEND = {"cares_about", "personal_notes", "ideas_to_help", "common_ground"}   # existing person: add a dated line
+        "common_ground": "Common ground", "mutual_contacts": "Mutual contacts"}
+APPEND = {"cares_about", "personal_notes", "ideas_to_help", "common_ground", "mutual_contacts"}   # existing person: add a dated line
 FILL = {"company", "role", "how_met"}                              # existing person: only if empty
 OTHER = {"world": ("World", P.select), "linkedin_url": ("LinkedIn", P.url),
          "email": ("Email", P.email), "phone": ("Phone", P.phone)}

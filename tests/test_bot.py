@@ -13,7 +13,7 @@ from tests.fakes import OWNER, FakeExtractor, FakeNotion, FakeTelegram, button, 
 
 TODAY = "2026-11-04"
 NEHA = {"people": [{"name": "Neha Sharma", "company": "Razorpay", "role": "PM", "how_met": "AI meetup",
-                    "cares_about": "Hiring PMs for AI payments", "common_ground": "Both from Jabalpur",
+                    "cares_about": "Hiring PMs for AI payments", "common_ground": "Both from Jabalpur", "mutual_contacts": "Ankit Jain introduced us",
                     "ideas_to_help": "Intro to a strong AI engineer"}],
         "summary": "Met at AI meetup", "type": "Event", "date": TODAY,
         "promises": [{"who": "me", "person": "Neha", "what": "Send my pricing teardown", "due": ""}], "question": "",
@@ -42,7 +42,7 @@ def test_text_note_creates_person_interaction_promise():
     [p] = people(n)
     assert prop(p, "Name") == "Neha Sharma" and prop(p, "Tier") == "Tier 1"
     assert prop(p, "Last contact") == TODAY and prop(p, "Next contact") == "2026-11-05"   # 24-hour follow-up first
-    assert prop(p, "Common ground") == "Both from Jabalpur"
+    assert prop(p, "Common ground") == "Both from Jabalpur" and prop(p, "Mutual contacts") == "Ankit Jain introduced us"
     [i] = n.rows("interactions_ds_id")
     assert prop(i, "Status") == "Saved" and prop(i, "People") == [p["id"]]
     [pr] = n.rows("promises_ds_id")
@@ -157,6 +157,7 @@ def test_who_and_promises_commands():
     b.run()
     who, proms = tg.sent[-2]["text"], tg.sent[-1]["text"]
     assert "Neha Sharma" in who and "Hiring PMs" in who and "You owe: Send my pricing teardown" in who
+    assert "Mutual contacts:</b> Ankit Jain introduced us" in who
     assert "You owe" in proms and "Neha Sharma: Send my pricing teardown" in proms
 
 

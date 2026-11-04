@@ -26,6 +26,7 @@ PERSON = {
         "personal_notes": {"type": "string"},
         "ideas_to_help": {"type": "string"},
         "common_ground": {"type": "string"},
+        "mutual_contacts": {"type": "string"},
         "linkedin_url": {"type": "string"},
         "email": {"type": "string"},
         "phone": {"type": "string"},
@@ -65,6 +66,7 @@ Return JSON:
   cares_about: their goals, problems, what they are working on.
   personal_notes: family, hobbies, hometown, life events. Write respectfully, as if they might read it.
   common_ground: rare things they share with {owner} (his links: {links}). Only if said.
+  mutual_contacts: people they both know, or who introduced them. Only if said.
   ideas_to_help: up to 2 small, useful things {owner} could do for them (an intro, an article, feedback,
     a five-minute favour) that follow from what was said. Never invent facts.
 - summary: one plain line about this interaction, e.g. "Coffee at Third Wave, talked about AI pricing".

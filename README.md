@@ -32,7 +32,7 @@ From the networking skill and the four books it is built on. The bot drafts; you
 
 | Notion table | One row per | Filled in by the bot |
 |---|---|---|
-| **People** | person | Name, Tier (new = Tier 1), World, Company, Role, How we met, Cares about, Personal notes, Ideas to help, Common ground, LinkedIn, Email, Phone, Last contact, Next contact |
+| **People** | person | Name, Tier (new = Tier 1), World, Company, Role, How we met, Cares about, Personal notes, Ideas to help, Common ground, Mutual contacts, LinkedIn, Email, Phone, Last contact, Next contact |
 | **Interactions** | voice note or message | Summary, Date, Type, People, Event, Source, Status, Raw (the transcript) |
 | **Promises** | promise | What, Who (Me / Them), Person, Due, Done |
 

@@ -22,7 +22,7 @@ def people_props(cfg: dict) -> dict:
         "Tier": SEL(*cfg["tiers"].keys()),
         "World": SEL(*cfg["worlds"]),
         "Company": TXT, "Role": TXT, "How we met": TXT,
-        "Cares about": TXT, "Personal notes": TXT, "Ideas to help": TXT, "Common ground": TXT,
+        "Cares about": TXT, "Personal notes": TXT, "Ideas to help": TXT, "Common ground": TXT, "Mutual contacts": TXT,
         "LinkedIn": {"url": {}}, "Email": {"email": {}}, "Phone": {"phone_number": {}},
         "Last contact": DATE, "Next contact": DATE,
     }

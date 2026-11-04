@@ -246,7 +246,8 @@ class Bot:
             lines = [f'<b><a href="{esc(p["url"])}">{esc(p["name"])}</a></b> — {esc(p["tier"] or "no tier")}' + (f" · {esc(job)}" if job else "")]
             lines.append(f"Last {nice_date(p['last']) or '—'} · next {nice_date(p['next']) or '—'}")
             for label, k in (("Cares about", "cares_about"), ("Personal", "personal_notes"), ("How you met", "how_met"),
-                             ("Common ground", "common_ground"), ("Ideas to help", "ideas_to_help")):
+                             ("Common ground", "common_ground"), ("Mutual contacts", "mutual_contacts"),
+                             ("Ideas to help", "ideas_to_help")):
                 if p[k]:
                     lines.append(f"<b>{label}:</b> {esc(p[k][-400:])}")
             for pr in promises:
