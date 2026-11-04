@@ -57,3 +57,11 @@ def test_normalise_cleans_gemini_output():
 def test_notion_dropdown_options_have_no_commas():
     names = list(CFG["worlds"]) + list(CFG["tiers"]) + [CFG["new_person_tier"]]
     assert not [n for n in names if "," in n]
+
+
+def test_voice_spelling_matches_linkedin_spelling():
+    assert name_score("Abhijeet Menon", "Abhijith Menon") >= 0.92
+    assert name_score("Neha Sharma", "Neha Verma") < 0.92
+    assert name_score("Rahul Gupta", "Rohit Gupta") < 0.92
+    rows = [{"id": "1", "name": "Abhijith Menon", "company": "", "linkedin_url": "", "email": "", "phone": ""}]
+    assert find({"name": "Abhijeet Menon"}, rows)[0] == "same"

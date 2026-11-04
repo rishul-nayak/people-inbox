@@ -25,12 +25,26 @@ def norm_phone(p: str) -> str:
     return digits[-10:] if len(digits) >= 10 else ""
 
 
+def skeleton(word: str) -> str:
+    """Sounds-alike key: Abhijeet and Abhijith both become bhjt, Priya and Preeya both become pr."""
+    w = re.sub(r"h(?=[^aeiou]|$)", "", word)         # th -> t, Abhijith -> Abhijit
+    w = re.sub(r"[aeiouy]+", "", w)
+    return re.sub(r"(.)\1+", r"\1", w)
+
+
+def sounds_alike(a: str, b: str) -> bool:
+    ta, tb = a.split(), b.split()
+    return len(ta) == len(tb) >= 2 and all(skeleton(x) == skeleton(y) and len(skeleton(x)) >= 2 for x, y in zip(ta, tb))
+
+
 def name_score(a: str, b: str) -> float:
     a, b = norm_name(a), norm_name(b)
     if not a or not b:
         return 0.0
     if a == b:
         return 1.0
+    if sounds_alike(a, b):
+        return 0.95                       # voice note vs LinkedIn spelling: Abhijeet / Abhijith
     ta, tb = a.split(), b.split()
     if set(ta) == set(tb):
         return 0.98                       # "Sharma Neha" vs "Neha Sharma"
