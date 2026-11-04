@@ -48,10 +48,11 @@ def test_text_note_creates_person_interaction_promise():
     [pr] = n.rows("promises_ds_id")
     assert prop(pr, "Who") == "Me" and prop(pr, "Person") == [p["id"]] and prop(pr, "Due") == "2026-11-06"
     card = tg.sent[-1]
-    assert "Neha Sharma" in card["text"] and "new · Tier 1 · next 5 Nov" in card["text"] and "due 6 Nov" in card["text"]
-    assert "🎁 For Neha Sharma: Intro to a strong AI engineer" in card["text"]
+    assert "Neha Sharma</a></b>: new contact, Tier 1. Next contact 5 Nov." in card["text"]
+    assert "<b>Idea for Neha Sharma:</b> Intro to a strong AI engineer" in card["text"]
+    assert "<b>You owe Neha Sharma:</b> Send my pricing teardown, by 6 Nov." in card["text"]
     assert "<pre>Hi Neha, great meeting you" in card["text"]
-    assert card["buttons"][-1][0][0] == "↩️ Undo"
+    assert card["buttons"][-1][0][0] == "Undo"
     assert tg.acked == [1]
 
 
@@ -65,7 +66,7 @@ def test_second_note_updates_same_person_and_undo_restores():
     [p] = people(n)                                                  # no duplicate
     assert prop(p, "Last contact") == TODAY and prop(p, "Next contact") == "2026-12-04"    # then Tier 1 = 30 days
     assert prop(p, "Personal notes") == "[2026-11-04] Runs marathons"
-    assert "updated" in tg.sent[-1]["text"]
+    assert "updated. Next contact 4 Dec." in tg.sent[-1]["text"]
     undo = tg.sent[-1]["buttons"][-1][0][1]
     tg.queue = [button(3, undo)]
     b.run()
@@ -93,7 +94,7 @@ def test_maybe_duplicate_then_merge():
     b.run()
     assert len(people(n)) == 2
     card = tg.sent[-1]
-    assert "is this Neha Sharma?" in card["text"]
+    assert "new contact. Is this Neha Sharma?" in card["text"]
     same_btn = card["buttons"][0][0]
     assert same_btn[0] == "Same as Neha Sharma"
     tg.queue = [button(3, same_btn[1])]
@@ -156,9 +157,9 @@ def test_who_and_promises_commands():
     tg.queue = [msg(2, "/who neha"), msg(3, "/promises")]
     b.run()
     who, proms = tg.sent[-2]["text"], tg.sent[-1]["text"]
-    assert "Neha Sharma" in who and "Hiring PMs" in who and "You owe: Send my pricing teardown" in who
+    assert "Neha Sharma" in who and "Hiring PMs" in who and "<b>You owe:</b> Send my pricing teardown, by 6 Nov." in who
     assert "Mutual contacts:</b> Ankit Jain introduced us" in who
-    assert "You owe" in proms and "Neha Sharma: Send my pricing teardown" in proms
+    assert "<b>You owe</b>" in proms and "Neha Sharma: Send my pricing teardown, by 6 Nov" in proms
 
 
 def test_one_bad_update_does_not_stop_the_run():
@@ -172,7 +173,7 @@ def test_digest_lists_due_promises_and_yesterdays_people():
     b, n, tg, c = make([msg(1, "note")], [yesterday])
     b.run()
     text = build(b.store, TODAY)
-    assert "Send deck · 3 Nov (late)" in text and "Met yesterday" in text and "Neha Sharma" in text
+    assert "Send deck, by 3 Nov (1 day late)" in text and "Met yesterday" in text and "Neha Sharma" in text
     assert "Ping today" not in text            # Neha is already in "met yesterday"
     assert build(Store(FakeNotion(), c), TODAY) is None
 
@@ -187,8 +188,8 @@ def test_digest_pings_allies_first_with_a_reason():
                                        "Tier": {"select": {"name": tier}}, "Next contact": {"date": {"start": nxt}},
                                        "Cares about": {"rich_text": [{"type": "text", "text": {"content": "[2026-10-01] Raising a seed round"}}]}})
     text = build(s, TODAY)
-    lines = [l for l in text.splitlines() if l.startswith("• ")]
-    assert [l.split(" · ")[0][2:] for l in lines] == ["Arjun", "Zoya", "Tara"]     # Ally, Tier 1, Tier 2; max 3
+    lines = [ln for ln in text.splitlines() if ln.startswith("• ")]
+    assert [ln.split(" · ")[0][2:] for ln in lines] == ["Arjun", "Zoya", "Tara"]     # Ally, Tier 1, Tier 2; max 3
     assert lines[0].endswith(": Raising a seed round") and "Mom" not in text and "Late Later" not in text
 
 
@@ -197,3 +198,12 @@ def test_card_buttons_fit_telegram_limit():
     for row in botmod.card_buttons(c):
         for _, data in row:
             assert len(data.encode()) <= 64
+
+
+def test_bot_text_has_no_emoji_icons():
+    import re
+    b, n, tg, c = make([msg(1, "note"), msg(2, "/help"), msg(3, "/who neha"), msg(4, "/promises")], [NEHA])
+    b.run()
+    texts = [m["text"] for m in tg.sent] + [build(b.store, TODAY) or ""]
+    emoji = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
+    assert not [t for t in texts if emoji.search(t)]

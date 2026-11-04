@@ -7,54 +7,55 @@ from __future__ import annotations
 import html
 import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from common import env, load_config, load_dotenv, load_state, log, nice_date, save_state, today_local
 from extract import ExtractError, QuotaExhausted
 from match import name_score
 
 HELP = """<b>People Inbox</b>
-Send me anything about someone you met:
-• a <b>voice note</b> ("Met Neha Sharma from Razorpay at the AI meetup. She's hiring PMs. I'll send her my teardown.")
-• a <b>photo</b> of a visiting card or a profile screenshot
-• a <b>LinkedIn link</b> (share it from the LinkedIn app)
-• a <b>forwarded</b> message
+Send me a note about anyone you meet:
+• A voice note: who, where, what they care about, what you promised.
+• A photo of a visiting card or a profile screenshot.
+• A LinkedIn link, with their name and where you met.
+• A forwarded message.
+Reply to one of my cards to add to it.
 
-Commands:
-/who Neha — everything you know about Neha
-/promises — what you owe people and what they owe you
-/event AI meetup — tag the next 4 hours of notes with this event (/event off to stop)
+<b>/who Neha</b> shows what you know about Neha.
+<b>/promises</b> shows what you owe and what you are owed.
+<b>/event AI meetup</b> tags your notes with the event for 4 hours. <b>/event off</b> stops it.
 
-I check for messages every 10 minutes."""
+I check for new messages every 10 minutes."""
 
 esc = html.escape
 
 
 def card_text(c: dict) -> str:
-    head = f"✅ <b>Saved</b> · {esc(c['type'])} · {nice_date(c['date'])}" + (f" · {esc(c['event'])}" if c.get("event") else "")
+    head = f"<b>Saved</b> · {esc(c['type'])} · {nice_date(c['date'])}" + (f" · {esc(c['event'])}" if c.get("event") else "")
     lines = [head]
     maybe_ks = {m["k"]: m for m in c.get("maybe", [])}
     for k, p in enumerate(c["people"]):
         name = f'<a href="{esc(p["url"])}">{esc(p["name"])}</a>' if p.get("url") else esc(p["name"])
+        nxt = f" Next contact {nice_date(p['next'])}." if p.get("next") else ""
         if k in maybe_ks:
-            status = "new · is this " + " or ".join(esc(n) for n in maybe_ks[k]["names"]) + "?"
+            status = "new contact. Is this " + " or ".join(esc(n) for n in maybe_ks[k]["names"]) + "?"
         elif p["status"] == "new":
-            status = f"new · {esc(p.get('tier') or '')}" + (f" · next {nice_date(p['next'])}" if p.get("next") else "")
+            status = f"new contact, {esc(p.get('tier') or '')}.{nxt}"
         else:
-            status = "updated" + (f" · next {nice_date(p['next'])}" if p.get("next") else "")
-        lines.append(f"👤 {name} — {status}")
+            status = f"updated.{nxt}"
+        lines.append(f"<b>{name}</b>: {status}")
     for p in c["people"][:3]:
         if p.get("idea"):
-            lines.append(f"🎁 For {esc(p['name'])}: {esc(p['idea'])}")
+            lines.append(f"<b>Idea for {esc(p['name'])}:</b> {esc(p['idea'])}")
     for pr in c["promises"]:
         if pr["who"] == "me":
-            lines.append(f"📌 You → {esc(pr['person'] or 'them')}: {esc(pr['what'])} · due {nice_date(pr['due'])}")
+            lines.append(f"<b>You owe {esc(pr['person'] or 'them')}:</b> {esc(pr['what'])}, by {nice_date(pr['due'])}.")
         else:
-            lines.append(f"📌 {esc(pr['person'] or 'They')} → you: {esc(pr['what'])} · check {nice_date(pr['due'])}")
+            lines.append(f"<b>{esc(pr['person'] or 'They')} owes you:</b> {esc(pr['what'])}. Check on {nice_date(pr['due'])}.")
     if c.get("question"):
-        lines.append(f"❓ {esc(c['question'])} <i>(reply to this message)</i>")
+        lines.append(f"<b>Question:</b> {esc(c['question'])} Reply to this message.")
     if c.get("draft"):
-        lines.append(f"\n✉️ <b>Your 24-hour follow-up</b> (tap to copy, edit, send yourself)\n<pre>{esc(c['draft'])}</pre>")
+        lines.append(f"\n<b>Tap to copy your follow-up:</b>\n<pre>{esc(c['draft'])}</pre>")
     return "\n".join(lines)
 
 
@@ -65,7 +66,7 @@ def card_buttons(c: dict) -> list[list[tuple[str, str]]]:
         row = [(f"Same as {n[:20]}", f"m:{iid}:{m['k']}:{j}") for j, n in enumerate(m["names"][:2])]
         row.append(("Keep separate", f"k:{iid}:{m['k']}"))
         rows.append(row)
-    rows.append([("↩️ Undo", f"u:{iid}")])
+    rows.append([("Undo", f"u:{iid}")])
     return rows
 
 
@@ -93,7 +94,7 @@ class Bot:
                 log(f"update failed: {type(e).__name__}")
                 chat = (u.get("message") or {}).get("chat", {}).get("id")
                 if chat and self.is_owner((u.get("message") or {}).get("from", {})):
-                    self.tg.send(chat, f"⚠️ Couldn't save that ({esc(type(e).__name__)}). Please send it again.")
+                    self.tg.send(chat, f"Couldn't save that ({esc(type(e).__name__)}). Please send it again.")
             finally:
                 self.tg.ack(u["update_id"])
         if self.owner:
@@ -119,7 +120,7 @@ class Bot:
             return self.command(chat, text)
         payload = self.payload(msg, text)
         if not payload["text"] and not payload["file_id"]:
-            self.tg.send(chat, "Send me text, a voice note or a photo.")
+            self.tg.send(chat, "Send me a voice note, a photo or text.")
             return
         self.capture(chat, payload, reply_to=msg.get("message_id"))
 
@@ -161,13 +162,13 @@ class Bot:
                 raise
             self.fresh.add(self.store.save_pending(payload, self.today(), type(e).__name__))
             self.counts["pending"] += 1
-            self.tg.send(chat, "⏳ Got it. Gemini is busy, so I'll save it on a later run.", reply_to=reply_to)
+            self.tg.send(chat, "Got it. Gemini is busy, so I'll save this on the next run.", reply_to=reply_to)
             return "pending"
         if not ex["people"]:
             if pending_id:
                 self.store.mark(pending_id, "Error")
-            self.tg.send(chat, "I couldn't find a person in that. Say their full name, for example: "
-                               "<i>\"Met Neha Sharma from Razorpay at the AI meetup\"</i>.", reply_to=reply_to)
+            self.tg.send(chat, "I couldn't find a person in this. Say their full name, for example: "
+                               "<i>Met Neha Sharma from Razorpay at the AI meetup.</i>", reply_to=reply_to)
             return "skipped"
         c = self.store.save_capture(ex, payload["source"], self.event(), self.today(), existing_id=pending_id)
         self.counts["saved"] += 1
@@ -184,8 +185,8 @@ class Bot:
                 give_up = d.get("tries", 0) + 1 >= tries_max
                 self.store.bump_pending(row["id"], give_up)
                 if give_up:
-                    self.tg.send(int(self.owner), "⚠️ I couldn't process one note after several tries. "
-                                                  "It's in Notion → Interactions with status Error. Please resend it.")
+                    self.tg.send(int(self.owner), "I couldn't process one note after 3 tries. "
+                                                  "It is in Notion, Interactions, with status Error. Please send it again.")
                 break   # Gemini is still busy: try again next run
 
     # ---------- buttons ----------
@@ -197,7 +198,7 @@ class Bot:
         action, iid = parts[0], _uuid(parts[1]) if len(parts) > 1 else ""
         if action == "u":
             done = self.store.undo(iid)
-            self.tg.edit(msg["chat"]["id"], msg["message_id"], "↩️ <b>Undone.</b> Nothing from this note is in Notion now.")
+            self.tg.edit(msg["chat"]["id"], msg["message_id"], "<b>Undone.</b> Nothing from this note is in Notion now.")
             self.tg.answer(cq["id"], "Undone" if done else "Already undone")
             return
         if action == "m":
@@ -220,11 +221,11 @@ class Bot:
         elif cmd == "/event":
             if not arg or arg.lower() == "off":
                 self.state.pop("event", None)
-                self.tg.send(chat, "Event mode off.")
+                self.tg.send(chat, "Event mode is off.")
             else:
                 until = datetime.now(timezone.utc) + timedelta(hours=self.cfg["event_hours"])
                 self.state["event"] = {"name": arg[:80], "until": until.isoformat(timespec="minutes")}
-                self.tg.send(chat, f"🎟 Event mode on: <b>{esc(arg[:80])}</b> for {self.cfg['event_hours']} hours. "
+                self.tg.send(chat, f"Event mode is on for {self.cfg['event_hours']} hours: <b>{esc(arg[:80])}</b>. "
                                    f"Every note you send gets this tag.")
         elif cmd == "/id":
             self.tg.send(chat, f"Your Telegram ID: <code>{chat}</code>")
@@ -238,13 +239,13 @@ class Bot:
                         key=lambda x: -x[0])
         hits = [p for s, p in scored[:3] if s >= 0.72]
         if not hits:
-            return f"No one called {esc(q)} yet."
+            return f"No one called {esc(q)} in Notion yet."
         promises = self.store.open_promises()
         out = []
         for p in hits:
             job = " · ".join(x for x in (p["role"], p["company"]) if x)
-            lines = [f'<b><a href="{esc(p["url"])}">{esc(p["name"])}</a></b> — {esc(p["tier"] or "no tier")}' + (f" · {esc(job)}" if job else "")]
-            lines.append(f"Last {nice_date(p['last']) or '—'} · next {nice_date(p['next']) or '—'}")
+            lines = [f'<b><a href="{esc(p["url"])}">{esc(p["name"])}</a></b> · {esc(p["tier"] or "No tier")}' + (f" · {esc(job)}" if job else "")]
+            lines.append(f"Last contact {nice_date(p['last']) or 'none'}. Next contact {nice_date(p['next']) or 'none'}.")
             for label, k in (("Cares about", "cares_about"), ("Personal", "personal_notes"), ("How you met", "how_met"),
                              ("Common ground", "common_ground"), ("Mutual contacts", "mutual_contacts"),
                              ("Ideas to help", "ideas_to_help")):
@@ -252,8 +253,8 @@ class Bot:
                     lines.append(f"<b>{label}:</b> {esc(p[k][-400:])}")
             for pr in promises:
                 if p["id"] in pr["people"]:
-                    arrow = "You owe" if pr["who"] == "Me" else "They owe"
-                    lines.append(f"📌 {arrow}: {esc(pr['what'])} · {nice_date(pr['due'])}")
+                    owe = "You owe" if pr["who"] == "Me" else "They owe you"
+                    lines.append(f"<b>{owe}:</b> {esc(pr['what'])}, by {nice_date(pr['due'])}.")
             out.append("\n".join(lines))
         return "\n\n".join(out)
 
@@ -270,9 +271,16 @@ class Bot:
                 out.append(title)
                 for r in mine[:15]:
                     person = ", ".join(names.get(i, "?") for i in r["people"]) or "—"
-                    late = " (late)" if r["due"] and r["due"][:10] < today else ""
-                    out.append(f"• {esc(person)}: {esc(r['what'])} · {nice_date(r['due'])}{late}")
+                    out.append(f"• {esc(person)}: {esc(r['what'])}, by {nice_date(r['due'])}{late_tag(r['due'], today)}")
         return "\n".join(out)
+
+
+def late_tag(due: str | None, today: str) -> str:
+    """ (2 days late) — a late date always says by how much."""
+    if not due or due[:10] >= today:
+        return ""
+    days = (date.fromisoformat(today) - date.fromisoformat(due[:10])).days
+    return f" ({days} day{'s' if days > 1 else ''} late)"
 
 
 def _uuid(s: str) -> str:

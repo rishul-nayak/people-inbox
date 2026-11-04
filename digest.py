@@ -10,6 +10,7 @@ import re
 import sys
 
 from common import add_days, env, load_config, load_dotenv, load_state, log, nice_date, save_state, today_local
+from bot import late_tag
 from notion_client import prop
 
 esc = html.escape
@@ -31,21 +32,21 @@ def build(store, today: str, cfg: dict | None = None) -> str | None:
                    key=lambda p: (order[p["tier"]], p["next"]))[:cfg["daily_pings"]]
     if not due and not met and not pings:
         return None
-    lines = ["☀️ <b>Today</b>"]
+    lines = [f"<b>Today · {nice_date(today)}</b>"]
     if due:
-        lines.append("\n<b>You promised</b>")
+        lines.append("\n<b>Promises due</b>")
         for r in due[:10]:
-            who = ", ".join(names.get(i, "?") for i in r["people"]) or "—"
-            late = " (late)" if r["due"][:10] < today else ""
-            lines.append(f"• {esc(who)}: {esc(r['what'])} · {nice_date(r['due'])}{late}")
+            who = ", ".join(names.get(i, "?") for i in r["people"]) or "No one linked"
+            lines.append(f"• {esc(who)}: {esc(r['what'])}, by {nice_date(r['due'])}{late_tag(r['due'], today)}")
     if met:
-        lines.append("\n<b>Met yesterday: send each a follow-up today</b>")
+        lines.append("\n<b>Met yesterday, so send each a follow-up today</b>")
         lines.append("• " + ", ".join(esc(n) for n in met[:15]))
     if pings:
-        lines.append("\n<b>Ping today</b> (a useful link, a congrats, or \"how did X go?\")")
+        lines.append("\n<b>Ping today</b>")
         for p in pings:
             why = re.sub(r"^\[[^\]]*\]\s*", "", (p["cares_about"].splitlines() or [""])[-1])[:90]
-            lines.append(f"• {esc(p['name'])} · {esc(p['tier'])} · last {nice_date(p['last']) or '—'}" + (f": {esc(why)}" if why else ""))
+            lines.append(f"• {esc(p['name'])} · {esc(p['tier'])} · last contact {nice_date(p['last']) or 'none'}"
+                         + (f": {esc(why)}" if why else ""))
     return "\n".join(lines)
 
 

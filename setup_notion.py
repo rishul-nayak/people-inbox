@@ -80,7 +80,7 @@ def main() -> int:
     else:
         parent = setting("NOTION_PARENT_PAGE_ID", cfg)
         home = n.create_child_page(parent, "People Inbox", [
-            para("Everyone you meet lands here from the Telegram bot. Edit anything by hand; the bot never overwrites your edits.")])
+            para("Everyone you log in the Telegram bot lands here. The bot fills empty fields and adds dated lines. It never replaces text you wrote.")])
         ids["PEOPLE_DB_ID"], ids["PEOPLE_DS_ID"] = create(n, home["id"], "People", people_props(cfg))
         ids["INTERACTIONS_DB_ID"], ids["INTERACTIONS_DS_ID"] = create(n, home["id"], "Interactions", {
             "Summary": {"title": {}}, "Date": DATE,

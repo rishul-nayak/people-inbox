@@ -68,7 +68,7 @@ Return JSON:
   common_ground: rare things they share with {owner} (his links: {links}). Only if said.
   mutual_contacts: people they both know, or who introduced them. Only if said.
   ideas_to_help: up to 2 small, useful things {owner} could do for them (an intro, an article, feedback,
-    a five-minute favour) that follow from what was said. Never invent facts.
+    a five-minute favour) that follow from what was said. Never invent facts. One sentence each.
 - summary: one plain line about this interaction, e.g. "Coffee at Third Wave, talked about AI pricing".
 - type: Meeting, Call, Event, Message, Note, or Contact card (just a card or profile, no conversation).
 - date: YYYY-MM-DD of the interaction. "yesterday" means the day before today. Empty if not said.
@@ -76,10 +76,15 @@ Return JSON:
   person = that contact's name. due = YYYY-MM-DD if a time was said ("by Friday"), else empty.
 - question: if a key fact is missing (a full name, or how they met), ONE short question to ask {owner}. Else empty.
 - transcript: for a voice note, what he said, word for word. Empty for text and photos.
-- follow_up_draft: if he met or talked to someone new or important, his 24-hour follow-up message to the main
-  person: thank them, name one specific moment, deliver or restate what he promised, one clear next step.
-  3 to 4 short sentences, warm, plain English, no buzzwords, ending "— {owner}". Empty for a contact card,
-  a forwarded message or a plain note.
+- follow_up_draft: if he met or talked to someone new or important, his 24-hour follow-up message to the
+  main person, ending "— {owner}". Empty for a contact card, a forwarded message or a plain note.
+Writing rules for every text you write (notes, summary, ideas, the draft):
+- Normal sentences, the way he would say them to a friend. No clever, poetic or salesy phrases,
+  no buzzwords, no filler ("great to connect", "hope you're doing well"), no emoji.
+- Keep every concrete detail: names, companies, roles, numbers, dates, places.
+- Short: 1 to 2 sentences per field. Say each thing once. Never repeat the summary in a note.
+- The draft: thank them for one specific thing, deliver or restate the promise with its date,
+  end with one clear next step. 3 to 4 short sentences.
 He may speak English or Hinglish. Write the output in English."""
 
 

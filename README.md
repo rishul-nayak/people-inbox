@@ -22,7 +22,8 @@ From the networking skill and the four books it is built on. The bot drafts; you
 | Rule | Where it comes from | What the bot does |
 |---|---|---|
 | Follow up within 24 hours | Never Eat Alone | The card includes a ready follow-up draft; a new person's next contact is tomorrow |
-| Give first, in small useful gifts | Give and Take | 🎁 line: up to 2 ideas to help, only from what you said |
+| Write plainly, keep every detail | The noslop skill | Notes, cards and drafts use normal sentences, keep names, numbers and dates, and never use filler or emoji |
+| Give first, in small useful gifts | Give and Take | An "Idea for" line: up to 2 ways to help, only from what you said |
 | Rare common ground builds trust | Give and Take (uncommon commonality) | Saves shared links (Jabalpur, IIT Bombay…) in **Common ground** |
 | Deliver every promise | Never Eat Alone | Every promise becomes a dated row; due ones appear at 09:00 |
 | Keep in touch by system, by tier | The Startup of You, Never Eat Alone | Next contact = tier days; 09:00 lists 3 people to ping, Allies first |
@@ -71,4 +72,4 @@ The bot checks Telegram every 10 minutes from 06:30 to 00:20 IST. Need it now: A
 
 **If a run fails:** Actions → the red run → the **python bot.py** step shows the error type. `401` from Notion = wrong token · `404` = the integration isn't connected to Life → Professional · `Missing … secret` = add it. A note that hit a Gemini limit waits as **Pending** and is retried on the next runs.
 
-Code: **`bot.py`** reads Telegram and answers · **`extract.py`** talks to Gemini · **`match.py`** finds duplicates · **`store.py`** writes Notion, Undo and Merge · **`digest.py`** sends the 09:00 message · **`tests/`** has 19 tests that run on every push.
+Code: **`bot.py`** reads Telegram and answers · **`extract.py`** talks to Gemini · **`match.py`** finds duplicates · **`store.py`** writes Notion, Undo and Merge · **`digest.py`** sends the 09:00 message · **`tests/`** has 20 tests that run on every push.
