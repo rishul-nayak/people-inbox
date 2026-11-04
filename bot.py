@@ -299,6 +299,8 @@ def main() -> int:
     before = json.dumps(state, sort_keys=True)
     bot = Bot(Telegram(env("TELEGRAM_BOT_TOKEN")), Store(Notion(env("NOTION_TOKEN")), cfg),
               Extractor(env("GEMINI_API_KEY"), cfg), cfg, env("TELEGRAM_OWNER_ID", required=False), state)
+    me = bot.tg.call("getMe")   # the bot's public username: shows which bot the token belongs to
+    log(f"bot: @{me.get('username')}, owner set: {bool(bot.owner)}")
     counts = bot.run()
     if json.dumps(state, sort_keys=True) != before:
         save_state(state)
